@@ -45,10 +45,10 @@ For Real Robot Execution
     https://github.com/ros-industrial/industrial_core?files=1)
 
 
-  2. roslaunch robotis_controller robotis_manager.launch (from ROBOTIS-Framework)
+  2. roslaunch robotis_controller robotis_manager.launch
   
 
-  (https://github.com/ROBOTIS-GIT/ROBOTIS-Framework/wiki)
+  (from ROBOTIS-Framework  https://github.com/ROBOTIS-GIT/ROBOTIS-Framework/wiki)
 
   
   3. rosrun robotis_manipulator_calc calc_node
