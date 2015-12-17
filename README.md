@@ -27,7 +27,7 @@ For Simulation Gazebo
 
     (please add industrial_core before execution 
     
-    https://github.com/ros-industrial/industrial_core?files=1)
+      https://github.com/ros-industrial/industrial_core?files=1)
     
     
   3. rosrun robotis_manipulator_calc calc_node _sim:=true
@@ -42,13 +42,15 @@ For Real Robot Execution
 
     (please add industrial_core before execution 
     
-    https://github.com/ros-industrial/industrial_core?files=1)
+      https://github.com/ros-industrial/industrial_core?files=1)
 
 
   2. roslaunch robotis_controller robotis_manager.launch
   
 
-  (from ROBOTIS-Framework  https://github.com/ROBOTIS-GIT/ROBOTIS-Framework/wiki)
+  (from ROBOTIS-Framework  
+  
+   https://github.com/ROBOTIS-GIT/ROBOTIS-Framework/wiki)
 
   
   3. rosrun robotis_manipulator_calc calc_node
