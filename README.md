@@ -35,4 +35,8 @@ For Real Robot Execution
   
   2. roslaunch robotis_controller robotis_manager.launch (ref. from ROBOTIS-Framework)
   
+
+  (https://github.com/ROBOTIS-GIT/ROBOTIS-Framework/wiki)
+
+  
   3. rosrun robotis_manipulator_calc calc_node
