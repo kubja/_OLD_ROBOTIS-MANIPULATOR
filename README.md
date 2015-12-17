@@ -6,7 +6,7 @@
 15/12/10 robotis_manipulator_h_gazebo added 
   Gazebo simulation uploaded
 
-15/12/17 robotis_manipulator_h_moveit
+15/12/17 robotis_manipulator_h_moveit \n
          robotis_manipulator_h_calc    added
          
 -------------------------------------------------------------------------------
