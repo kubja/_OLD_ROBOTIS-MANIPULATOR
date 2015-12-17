@@ -9,7 +9,7 @@
 15/12/17 robotis_manipulator_h_moveit
          robotis_manipulator_h_calc    added
          
- ---------------------------------------------------------------
+-------------------------------------------------------------------------------
          
 For Simulation Gazebo
 
@@ -19,7 +19,7 @@ For Simulation Gazebo
   
   3. rosrun robotis_manipulator_calc calc_node _sim:=true
   
- ---------------------------------------------------------------
+-------------------------------------------------------------------------------
 
 For Real Robot Execution
   
