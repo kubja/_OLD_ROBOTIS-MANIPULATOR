@@ -309,10 +309,17 @@
 
   <!-- End Effector -->
   <link name="end_effector">
+    <collision>
+      <origin xyz="0.0 0.0 0.0" rpy="0 0 0" />
+      <geometry>      
+        <cylinder length="0.01" radius="0.01"/>
+      </geometry>
+    </collision>
+
     <visual>
       <origin xyz="0.0 0.0 0.0" rpy="0 0 0" />
-      <geometry>
-        <box size="0.005 0.005 0.005" />
+      <geometry>      
+        <cylinder length="0.01" radius="0.01"/>
       </geometry>
       <material name="red"/>
     </visual>
