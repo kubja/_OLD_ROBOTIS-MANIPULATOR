@@ -33,7 +33,7 @@ For Real Robot Execution
   
   1. roslaunch robotis_manipulator_moveit moveit_demo.launch 
   
-  2. roslaunch robotis_controller robotis_manager.launch (ref. from ROBOTIS-Framework)
+  2. roslaunch robotis_controller robotis_manager.launch (from ROBOTIS-Framework)
   
 
   (https://github.com/ROBOTIS-GIT/ROBOTIS-Framework/wiki)
