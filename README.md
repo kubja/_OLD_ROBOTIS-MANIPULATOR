@@ -30,7 +30,7 @@ For Simulation Gazebo
       https://github.com/ros-industrial/industrial_core?files=1)
     
     
-  3. rosrun robotis_manipulator_calc calc_node _sim:=true
+  3. rosrun robotis_manipulator_calc moveit_node _sim:=true
   
 
 -------------------------------------------------------------------------------
@@ -53,4 +53,4 @@ For Real Robot Execution
    https://github.com/ROBOTIS-GIT/ROBOTIS-Framework/wiki)
 
   
-  3. rosrun robotis_manipulator_calc calc_node
+  3. rosrun robotis_manipulator_calc moveit_node
