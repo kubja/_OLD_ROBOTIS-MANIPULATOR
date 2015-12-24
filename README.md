@@ -36,13 +36,13 @@ moveit_node
       1-1. roslaunch robotis_manipulator_gazebo robotis_world.launch
   
       1-2. roslaunch robotis_manipulator_moveit moveit_gazebo.launch
-  
 
-        please add industrial_core before execution 
+
+          please add industrial_core before execution 
     
-        https://github.com/ros-industrial/industrial_core?files=1
-    
-    
+          https://github.com/ros-industrial/industrial_core?files=1
+
+
       1-3. rosrun robotis_manipulator_calc moveit_node _sim:=true
   
 
