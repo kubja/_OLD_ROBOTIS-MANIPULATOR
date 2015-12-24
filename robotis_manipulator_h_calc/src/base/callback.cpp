@@ -7,6 +7,7 @@
 
 #include <ros/ros.h>
 
+#include <std_msgs/Bool.h>
 #include <std_msgs/Float64.h>
 #include <std_msgs/String.h>
 
@@ -36,6 +37,7 @@ extern CalcState ManipulatorH;
 extern std::string joint_name[ MAX_JOINT_ID + 1 ];
 
 extern moveit_msgs::DisplayTrajectory moveit_msg;
+extern geometry_msgs::Pose ik_msg;
 
 extern bool task_20m_running ;
 
@@ -128,4 +130,18 @@ void display_planned_path_callback( const moveit_msgs::DisplayTrajectory::ConstP
 	moveit_msg = *msg;
 
     pthread_create( &tra_gene_20ms , NULL , moveit_trajectory_proc , NULL );
+}
+
+void fk_msgs_callback( const std_msgs::Bool::ConstPtr& msg )
+{
+    std_msgs::Bool fk_msgs = *msg;
+
+    ManipulatorH.solve_fk = fk_msgs.data;
+}
+
+void ik_msgs_callback( const geometry_msgs::Pose::ConstPtr& msg )
+{
+    ik_msg = *msg;
+
+    pthread_create( &tra_gene_20ms , NULL , task_traejectory_proc , NULL );
 }

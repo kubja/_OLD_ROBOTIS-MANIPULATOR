@@ -7,8 +7,10 @@
 
 #include <ros/ros.h>
 
+#include <std_msgs/Bool.h>
 #include <std_msgs/Float64.h>
 #include <std_msgs/String.h>
+#include <geometry_msgs/Pose.h>
 #include <sensor_msgs/JointState.h>
 #include <control_msgs/JointControllerState.h>
 #include <eigen_conversions/eigen_msg.h>
@@ -46,6 +48,7 @@ std::string joint_name [ MAX_JOINT_ID + 1 ] =
 
 ros::Publisher joint_states_pub;
 ros::Publisher joint_pub [ MAX_JOINT_ID + 1 ];
+ros::Publisher end_effector_pose_pub;
 
 moveit_msgs::DisplayTrajectory moveit_msg;
 geometry_msgs::Pose ik_msg;
@@ -53,6 +56,37 @@ geometry_msgs::Pose ik_msg;
 pthread_t	thread_20ms;
 bool 		task_20m_running = false;
 bool        gazebo_sim = false;
+
+void forward_kinematics( const Eigen::Affine3d &curr_end_effector_state )
+{
+    ROS_INFO("----- Current End Effector's State -----");
+    ROS_INFO("pos. x = %f", curr_end_effector_state.translation().coeff(0,0));
+    ROS_INFO("pos. y = %f", curr_end_effector_state.translation().coeff(1,0));
+    ROS_INFO("pos. z = %f", curr_end_effector_state.translation().coeff(2,0));
+
+    Eigen::Matrix3d R = curr_end_effector_state.rotation();
+    double roll_value = atan2( R.coeff(2,1), R.coeff(2,2) );
+    double pitch_value = atan2( -R.coeff(2,0), sqrt( pow(R.coeff(2,1),2) + pow(R.coeff(2,2),2) ) );
+    double yaw_value = atan2 ( R.coeff(1,0) , R.coeff(0,0) );
+    ROS_INFO("ori. roll = %f", roll_value );
+    ROS_INFO("ori. pitch = %f", pitch_value );
+    ROS_INFO("ori. yaw = %f", yaw_value );
+
+    Eigen::Quaterniond curr_end_effector_Q( curr_end_effector_state.rotation() );
+
+    geometry_msgs::Pose pose_msgs;
+
+    pose_msgs.position.x = curr_end_effector_state.translation().coeff(0,0);
+    pose_msgs.position.y = curr_end_effector_state.translation().coeff(1,0);
+    pose_msgs.position.z = curr_end_effector_state.translation().coeff(2,0);
+
+    pose_msgs.orientation.x = curr_end_effector_Q.x();
+    pose_msgs.orientation.y = curr_end_effector_Q.y();
+    pose_msgs.orientation.z = curr_end_effector_Q.z();
+    pose_msgs.orientation.w = curr_end_effector_Q.w();
+
+    end_effector_pose_pub.publish( pose_msgs );
+}
 
 void* thread_20ms_proc( void* arg )
 {
@@ -89,15 +123,63 @@ void* thread_20ms_proc( void* arg )
             joint_values[ id - 1 ]	=	JointState::m_goal_joint_state[ id ].m_position;
         }
 
+        kinematic_state->setJointGroupPositions( joint_model_group , joint_values );
+        const Eigen::Affine3d &curr_end_effector_state	=	kinematic_state->getGlobalLinkTransform("end_effector");
+
+        ManipulatorH.curr_task_p = curr_end_effector_state.translation();
+        ManipulatorH.curr_task_R = curr_end_effector_state.rotation();
+
+        Eigen::Quaterniond Q( ManipulatorH.curr_task_R );
+        ManipulatorH.curr_task_QR = Q;
+
 		/*---------- write goal position ----------*/
 
         if ( task_20m_running == true )
         {
             // send joint trajectory
-        	for ( int id = 1; id <= MAX_JOINT_ID; id++ )
+
+            if ( ManipulatorH.solve_ik == false )
             {
-                JointState::m_goal_joint_state[ id ].m_position = ManipulatorH.calc_tra.coeff( ManipulatorH.cnt , id );
-                joint_values[ id - 1 ] = JointState::m_goal_joint_state[ id ].m_position;
+                for ( int id = 1; id <= MAX_JOINT_ID; id++ )
+                {
+                    JointState::m_goal_joint_state[ id ].m_position = ManipulatorH.calc_tra.coeff( ManipulatorH.cnt , id );
+                    joint_values[ id - 1 ] = JointState::m_goal_joint_state[ id ].m_position;
+                }
+            }
+            else
+            {
+                // inverse kinematics
+                Eigen::Affine3d goal_end_effector_state	= Eigen::Affine3d::Identity();
+
+                // translation
+                goal_end_effector_state.translation() << ManipulatorH.task_tra( ManipulatorH.cnt , 0 ) ,
+                                                         ManipulatorH.task_tra( ManipulatorH.cnt , 1 ) ,
+                                                         ManipulatorH.task_tra( ManipulatorH.cnt , 2 ) ;
+
+                // orientation
+                double _cnt = ( double ) ManipulatorH.cnt / ( double ) ManipulatorH.all_time_steps;
+
+                Eigen::Quaterniond new_QR = ManipulatorH.curr_task_QR.slerp( _cnt , ManipulatorH.goal_task_QR );
+                goal_end_effector_state.rotate( new_QR.toRotationMatrix() );
+
+                bool found_ik = kinematic_state->setFromIK(joint_model_group, goal_end_effector_state, 10, 0.1);
+
+                if (found_ik)
+                {
+                    kinematic_state->copyJointGroupPositions(joint_model_group, joint_values);
+
+                    for( int id = 1; id <= MAX_JOINT_ID; id++ )
+                        JointState::m_goal_joint_state[ id ].m_position = joint_values[ id - 1 ];
+                }
+                else
+                {
+                    ROS_INFO("Did not find IK solution");
+
+                    task_20m_running = false;
+                    ManipulatorH.solve_ik  = false;
+
+                    ManipulatorH.cnt = 0;
+                }
             }
         }
 
@@ -127,7 +209,6 @@ void* thread_20ms_proc( void* arg )
         {
             for ( int id = 1; id <= MAX_JOINT_ID; id++ )
                 temp_position[ id ] = joint_values[ id - 1 ];
-
         }
 
         collision_result.clear();
@@ -176,22 +257,31 @@ void* thread_20ms_proc( void* arg )
             ROS_INFO("[end] send trajectory");
 
             task_20m_running = false;
-            ManipulatorH.cnt = 0;
+            ManipulatorH.solve_ik  = false;
 
+            ManipulatorH.cnt = 0;
+		}
+
+        if ( ManipulatorH.solve_fk == true )
+        {
             /*----- Forward Kinematics -----*/
 
             kinematic_state->setJointGroupPositions( joint_model_group , joint_values );
-
             const Eigen::Affine3d &curr_end_effector_state	=	kinematic_state->getGlobalLinkTransform("end_effector");
 
-            ROS_INFO("----- Current Joint Values -----");
-            for( std::size_t id = 1; id <= MAX_JOINT_ID; id++ )
-                ROS_INFO("%s: %f", joint_names[ id ].c_str(), joint_values[ id - 1 ]);
+            forward_kinematics( curr_end_effector_state );
 
-            ROS_INFO("----- Current End Effector's State -----");
-            ROS_INFO_STREAM( "Current Translation: \n" << curr_end_effector_state.translation() );
-            ROS_INFO_STREAM( "Current Rotation: \n" << curr_end_effector_state.rotation() );
-		}
+//            ROS_INFO("----- Current Joint Values -----");
+//            for( std::size_t id = 1; id < joint_names.size(); id++ )
+//                ROS_INFO("%s: %f", joint_names[ id ].c_str(), joint_values[ id - 1 ]);
+
+//            ROS_INFO("----- Current End Effector's State -----");
+//            ROS_INFO_STREAM( "Current Translation: \n" << curr_end_effector_state.translation() );
+//            ROS_INFO_STREAM( "Current Rotation: \n" << curr_end_effector_state.rotation() );
+
+            ManipulatorH.solve_fk = false;
+        }
+
 	}
 
 	return 0;
@@ -241,7 +331,7 @@ int main( int argc , char **argv )
         joint_real_states_sub = nh.subscribe("/robotis_manipulator_h/real_joint_states", 5, joint_real_states_callback);
 
     while ( ManipulatorH.get_ini_pose == false )
-        ros::spinOnce();
+    	ros::spinOnce();
 
     ROS_INFO("Set Initial Pose");
 
@@ -290,6 +380,12 @@ int main( int argc , char **argv )
     /* moveit subscribe */
     ros::Subscriber joint_fake_states_sub 	 = nh.subscribe("/move_group/fake_controller_joint_states", 5, joint_fake_states_callback);
     ros::Subscriber display_planned_path_sub = nh.subscribe("/move_group/display_planned_path", 		5, display_planned_path_callback);
+
+    /* from gui */
+    ros::Subscriber fk_msgs_sub = nh.subscribe("/robotis_manipulator_h/fk_msgs", 1, fk_msgs_callback);
+    ros::Subscriber ik_msgs_sub = nh.subscribe("/robotis_manipulator_h/ik_msgs", 1, ik_msgs_callback);
+
+    end_effector_pose_pub = nh.advertise<geometry_msgs::Pose>("/robotis_manipulator_h/end_effector_pose", 1);
 
     /*---------- 20ms thread ----------*/
 

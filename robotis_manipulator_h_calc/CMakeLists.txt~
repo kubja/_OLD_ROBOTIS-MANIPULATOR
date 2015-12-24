@@ -167,7 +167,6 @@ add_executable(moveit_node
 	src/base/jointstate.cpp
 	src/base/process.cpp
 	src/base/trajectory.cpp
-	src/base/transformation.cpp
 )
 
 add_executable(kinematics_node 
@@ -176,7 +175,6 @@ add_executable(kinematics_node
 	src/base/jointstate.cpp
 	src/base/process.cpp
 	src/base/trajectory.cpp
-	src/base/transformation.cpp
 )
 
 ## Add cmake target dependencies of the executable

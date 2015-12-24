@@ -20,6 +20,6 @@
 #include <Eigen/Dense>
 
 void* moveit_trajectory_proc(void* arg);
-void* interpolate_trajectory_proc(void* arg);
+void* task_traejectory_proc(void* arg);
 
 #endif /* PROCESS_H_ */

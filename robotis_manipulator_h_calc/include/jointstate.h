@@ -30,14 +30,6 @@ public:
 	int m_p_gain;
 	int m_i_gain;
 	int m_d_gain;
-
-	int cnt; // counter number
-	int all_time_steps; // all time steps of movement time
-
-	double mov_time; // movement time
-	double smp_time; // sampling time
-
-	Eigen::MatrixXd calc_tra; // calculated trajectory
 };
 
 class JointState

@@ -36,6 +36,7 @@ extern CalcState ManipulatorH;
 extern std::string joint_name[ MAX_JOINT_ID + 1 ];
 
 extern moveit_msgs::DisplayTrajectory moveit_msg;
+extern geometry_msgs::Pose ik_msg;
 
 extern bool task_20m_running ;
 
@@ -44,6 +45,8 @@ extern pthread_t tra_inter_20ms;
 void* moveit_trajectory_proc(void* arg)
 {
 	/*---------- get planned trajectory from moveit ----------*/
+
+    ROS_INFO("[start] plan trajectory");
 
 	std::vector<double> via_time;
 
@@ -68,7 +71,7 @@ void* moveit_trajectory_proc(void* arg)
 				double _joint_velocity 	   	= moveit_msg.trajectory[ _tra_index ].joint_trajectory.points[_point_index].velocities	 [ _joint_index ];
 				double _joint_acceleration 	= moveit_msg.trajectory[ _tra_index ].joint_trajectory.points[_point_index].accelerations[ _joint_index ];
 
-                for( int _name_index = 1; _name_index <= MAX_JOINT_ID - 1; _name_index++ )
+                for( int _name_index = 1; _name_index <= MAX_JOINT_ID; _name_index++ )
 				{
 					if( joint_name[ _name_index ] == _joint_name )
 					{
@@ -82,10 +85,55 @@ void* moveit_trajectory_proc(void* arg)
 		}
 	}
 
-    ManipulatorH.all_time_steps = ManipulatorH.points;
-    ROS_INFO("all_time_steps = %d", ManipulatorH.all_time_steps );
-
     ManipulatorH.mov_time = ManipulatorH.time_from_start.toSec();
     ROS_INFO("mov_time = %f", ManipulatorH.mov_time);
 
+    ManipulatorH.all_time_steps = ManipulatorH.points;
+    ROS_INFO("all_time_steps = %d", ManipulatorH.all_time_steps );
+
+    ROS_INFO("[end] plan trajectory");
+
+}
+
+void* task_traejectory_proc(void* arg)
+{
+    ManipulatorH.mov_time = 3.0;
+    ManipulatorH.all_time_steps = round( ManipulatorH.mov_time / ManipulatorH.smp_time ) + 1;
+
+    ManipulatorH.task_tra.resize( ManipulatorH.all_time_steps, 3 );
+
+    if ( task_20m_running == true )
+        ROS_INFO("Previous task is still alive!");
+    else
+    {
+        ManipulatorH.goal_task_p.coeffRef( 0 , 0 ) = ik_msg.position.x;
+        ManipulatorH.goal_task_p.coeffRef( 1 , 0 ) = ik_msg.position.y;
+        ManipulatorH.goal_task_p.coeffRef( 2 , 0 ) = ik_msg.position.z;
+
+        for ( int dim = 0; dim < 3; dim++ )
+        {
+            Eigen::MatrixXd tra = Tra_via0( ManipulatorH.curr_task_p.coeff( dim , 0 ) , 0.0 , 0.0 ,
+                                            ManipulatorH.goal_task_p.coeff( dim , 0 ) , 0.0 , 0.0 ,
+                                            ManipulatorH.smp_time , ManipulatorH.mov_time );
+
+            ManipulatorH.task_tra.block( 0 , dim , ManipulatorH.all_time_steps , 1 ) = tra;
+        }
+
+//        PRINT_MAT( ManipulatorH.task_tra );
+
+        Eigen::Quaterniond Q( ik_msg.orientation.w, ik_msg.orientation.x, ik_msg.orientation.y, ik_msg.orientation.z );
+        ManipulatorH.goal_task_QR = Q;
+
+//        Eigen::MatrixXd R = ManipulatorH.goal_task_QR.toRotationMatrix();
+//        PRINT_MAT( R );
+
+        /* ----- for send trajectory ----- */
+
+        ROS_INFO("[start] send trajectory");
+
+        task_20m_running = true;
+        ManipulatorH.cnt = 0;
+
+        ManipulatorH.solve_ik = true;
+    }
 }
