@@ -70,7 +70,7 @@ joint space planning using moveit default gui in Rviz (ex. RRT)
 
 kinematics_node
 
-forward kinematics and inverse kinematics example from moveit interface with gui
+forward kinematics and inverse kinematics example from moveit interface with user gui
 
 
     1. for simulation gazebo
