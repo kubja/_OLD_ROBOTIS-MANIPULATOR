@@ -33,9 +33,9 @@ joint space planning using moveit default gui in Rviz (ex. RRT)
 
     1. for simulation gazebo
 
-      1-1. roslaunch robotis_manipulator_gazebo robotis_world.launch
+      1-1. roslaunch robotis_manipulator_h_gazebo robotis_world.launch
   
-      1-2. roslaunch robotis_manipulator_moveit moveit_gazebo.launch
+      1-2. roslaunch robotis_manipulator_h_moveit moveit_gazebo.launch
 
 
           please add industrial_core before execution 
@@ -43,12 +43,12 @@ joint space planning using moveit default gui in Rviz (ex. RRT)
           https://github.com/ros-industrial/industrial_core?files=1
 
 
-      1-3. rosrun robotis_manipulator_calc moveit_node _sim:=true
+      1-3. rosrun robotis_manipulator_h_calc moveit_node _sim:=true
   
 
     2. ror real robot execution
   
-      2-1. roslaunch robotis_manipulator_moveit moveit_demo.launch 
+      2-1. roslaunch robotis_manipulator_h_moveit moveit_demo.launch 
 
 
           please add industrial_core before execution 
@@ -64,7 +64,7 @@ joint space planning using moveit default gui in Rviz (ex. RRT)
           https://github.com/ROBOTIS-GIT/ROBOTIS-Framework/wiki
 
   
-      2-3. rosrun robotis_manipulator_calc moveit_node
+      2-3. rosrun robotis_manipulator_h_calc moveit_node
       
 ------------------------------------------------------------------------------------
 
